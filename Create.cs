@@ -2,11 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
-using Azure;
 using Azure.Search.Documents.Indexes;
 using Azure.Search.Documents.Indexes.Models;
-using Azure.Search.Documents;
-using Azure.Search.Documents.Models;
 using DotNetEnv;
 using Azure.Identity;
 
@@ -23,82 +20,34 @@ public class CreateIndex
             var name = f.GetProperty("name").GetString();
             var dataType = f.GetProperty("type").GetString();
             bool isKey = f.GetProperty("key").GetBoolean();
-
-            // Determine the appropriate field type based on the field properties
-            SearchField field;
-
             bool isSearchable = f.GetProperty("searchable").GetBoolean();
             bool isFilterable = f.GetProperty("filterable").GetBoolean();
             bool isSortable = f.GetProperty("sortable").GetBoolean();
             bool isFacetable = f.GetProperty("facetable").GetBoolean();
-            // bool isRetrievable = f.GetProperty("retrievable").GetBoolean(); // Removed to fix CS0117 errors
 
-            if (dataType.StartsWith("Collection"))
-            {
-                // Handle collection types
-                var fieldType = SearchFieldDataType.Collection(SearchFieldDataType.Single);
-                if (isSearchable)
-                {
-                    field = new SearchableField(name, fieldType)
-                    {
-                        IsKey = isKey,
-                        IsFilterable = isFilterable,
-                        IsSortable = isSortable,
-                        IsFacetable = isFacetable,
-                        // IsRetrievable = isRetrievable, // Removed
-                    };
-                }
-                else
-                {
-                    field = new SimpleField(name, fieldType)
-                    {
-                        IsKey = isKey,
-                        IsFilterable = isFilterable,
-                        IsSortable = isSortable,
-                        IsFacetable = isFacetable,
-                        // IsRetrievable = isRetrievable, // Removed
-                    };
-                }
-            }
-            else
-            {
-                // Handle simple and searchable fields
-                var fieldType = ConvertToSearchFieldDataType(dataType);
-                if (isSearchable)
-                {
-                    field = new SearchableField(name, fieldType)
-                    {
-                        IsKey = isKey,
-                        IsFilterable = isFilterable,
-                        IsSortable = isSortable,
-                        IsFacetable = isFacetable,
-                        // IsRetrievable = isRetrievable, // Removed
-                    };
-                }
-                else
-                {
-                    field = new SimpleField(name, fieldType)
-                    {
-                        IsKey = isKey,
-                        IsFilterable = isFilterable,
-                        IsSortable = isSortable,
-                        IsFacetable = isFacetable,
-                        // IsRetrievable = isRetrievable, // Removed
-                    };
-                }
-            }
+            bool isCollection = dataType == "Collection(Edm.Single)";
+            var field = default(SearchField);
 
-            if (isKey && name == "ChunkId")
+            if (isSearchable && !isKey)
             {
-                field = new SimpleField(name, SearchFieldDataType.String)
+                field = new SearchableField(name, isCollection)
                 {
                     IsKey = isKey,
                     IsFilterable = isFilterable,
                     IsSortable = isSortable,
-                    IsFacetable = isFacetable,
+                    IsFacetable = isFacetable
                 };
             }
-
+            else
+            {
+                field = new SimpleField(name, ConvertToSearchFieldDataType(dataType))
+                {
+                    IsKey = isKey,
+                    IsFilterable = isFilterable,
+                    IsSortable = isSortable,
+                    IsFacetable = isFacetable
+                };
+            }
             fields.Add(field);
         }
         return fields;

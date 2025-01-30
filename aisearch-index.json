@@ -5,7 +5,7 @@
       {
         "name": "ChunkId",
         "type": "Edm.String",
-        "searchable": true,
+        "searchable": false,
         "filterable": true,
         "retrievable": true,
         "stored": true,
@@ -33,7 +33,7 @@
         "filterable": false,
         "retrievable": true,
         "stored": true,
-        "sortable": true,
+        "sortable": false,
         "facetable": false,
         "key": false,
         "synonymMaps": []
@@ -45,7 +45,7 @@
         "filterable": true,
         "retrievable": true,
         "stored": true,
-        "sortable": true,
+        "sortable": false,
         "facetable": false,
         "key": false,
         "synonymMaps": []
@@ -71,7 +71,7 @@
         "filterable": true,
         "retrievable": true,
         "stored": true,
-        "sortable": true,
+        "sortable": false,
         "facetable": false,
         "key": false,
         "synonymMaps": []
@@ -83,7 +83,7 @@
         "filterable": true,
         "retrievable": true,
         "stored": true,
-        "sortable": true,
+        "sortable": false,
         "facetable": false,
         "key": false,
         "synonymMaps": []
@@ -133,7 +133,7 @@
         "filterable": true,
         "retrievable": true,
         "stored": true,
-        "sortable": true,
+        "sortable": false,
         "facetable": false,
         "key": false,
         "synonymMaps": []
