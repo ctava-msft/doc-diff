@@ -26,9 +26,9 @@ public class Query
     {
         var options = new SearchOptions
         {
-            OrderBy = { "PageTitle, PageVersion asc" },
-            Size = 4, // Assuming 4 documents
-            Select = { "PageTitle", "ChunkText", "PageVersion" }
+            OrderBy = { "PageTitle", "PageVersion asc" }, // Corrected OrderBy syntax
+            Size = 4, // Ensure Size is set to retrieve 4 documents
+            Select = { "PageTitle", "PageVersion", "ChunkText", }
         };
 
         var results = await searchClient.SearchAsync<SearchDocument>("*", options);
@@ -43,19 +43,21 @@ public class Query
     }
 
     // Add a method to compare two documents using a language model
-    private static async Task<string> CompareDocumentsAsync(string doc1, string doc2)
+    private static async Task<string> CompareDocumentsAsync(int initialDocNo, string doc1Text, int compareDocNo, string doc2Text)
     {
-        var prompt = $"Provide the differences between the following two documents:\n\nDocument 1:\n{doc1}\n\nDocument 2:\n{doc2}";
+        Console.WriteLine($"Comparing document versions:\nDocument Version {initialDocNo}:\n{doc1Text}\nDocument Version {compareDocNo + 1}:\n{doc2Text}\n");
+        var systemPrompt = "You are a helpful AI Assistant that is expert at comparing document versions.";
+        var userPrompt = $"Provide the differences between the following two documents versions:\n\nDocument Version {initialDocNo}:\n{doc1Text}\n\nDocument Version {compareDocNo + 1}:\n{doc2Text}";
 
         var payload = new
         {
             messages = new[]
             {
-                new { role = "system", content = Environment.GetEnvironmentVariable("SYSTEM_MESSAGE") },
-                new { role = "user", content = prompt }
+                new { role = "system", content = systemPrompt },
+                new { role = "user", content = userPrompt }
             },
-            max_tokens = 1000,
-            temperature = 0.3
+            max_tokens = 4096,
+            temperature = 0.1
         };
 
         var jsonPayload = JsonSerializer.Serialize(payload);
@@ -85,15 +87,16 @@ public class Query
     }
 
     // Add a method to save differences to a Markdown file
-    private static void SaveDifferencesToMarkdown(List<(string Doc2, string Difference)> differences, string filename = "differences.md")
+    private static void SaveDifferencesToMarkdown(List<(string docNo, string Difference)> differences, string filename = "differences.md")
     {
         using var writer = new StreamWriter(filename, false);
         writer.WriteLine("# Document Differences\n");
         writer.WriteLine($"Date: {DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}\n");
+        writer.WriteLine("https://manuals.health.mil/pages/DisplayManualHtmlFile/2025-01-17/AsOf/TOT5/C5S1.html\n");
 
         foreach (var diff in differences)
         {
-            writer.WriteLine($"## Difference between Document 1 and Document {diff.Doc2}\n");
+            writer.WriteLine($"## Difference between Document Version 1 and Document Version {int.Parse(diff.docNo) + 1}\n");
             writer.WriteLine($"{diff.Difference}\n");
         }
 
@@ -127,21 +130,44 @@ public class Query
 
         // Retrieve documents ordered by PageVersion
         var documents = await RetrieveDocumentsOrdered(searchClient);
+        Console.WriteLine($"Retrieved {documents.Count} documents.");
         if (documents.Count < 4)
         {
             Console.WriteLine("Not enough documents retrieved.");
             return;
         }
 
-        var doc1 = documents[0]["ChunkText"] as string;
+        // Compare the documents
         var differences = new List<(string, string)>();
-
-        // Compare Document 1 with Documents 2, 3, and 4
-        for (int i = 1; i < 4; i++)
+        var docNumber = 0;
+        var doc1Text = "";
+        var docNText = "";
+        foreach (var doc in documents)
         {
-            var docN = documents[i]["ChunkText"] as string;
-            var diff = await CompareDocumentsAsync(doc1, docN);
-            differences.Add(($"{i + 1}", diff));
+            foreach (var kvp in doc)
+            {
+                //Console.WriteLine($"- {kvp.Key}: {kvp.Value}");
+                if (kvp.Key == "ChunkText")
+                {
+                    Console.WriteLine($"docNumber:{docNumber}-key:{kvp.Key}");
+                    if (docNumber == 0)
+                    {
+                        doc1Text = kvp.Value.ToString();
+                    }
+                    else
+                    {
+                        docNText = kvp.Value.ToString();
+                    }
+                    break;
+                }
+            }
+            if (docNumber == 0) {
+                docNumber++;
+                continue;   
+            }
+            var diff = await CompareDocumentsAsync(1, doc1Text, docNumber, docNText);
+            differences.Add(($"{docNumber}", diff));
+            docNumber++;
         }
 
         // Save differences to Markdown

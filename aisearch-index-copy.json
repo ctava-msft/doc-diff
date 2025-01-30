@@ -45,7 +45,7 @@
         "filterable": true,
         "retrievable": true,
         "stored": true,
-        "sortable": true,
+        "sortable": false,
         "facetable": false,
         "key": false,
         "synonymMaps": []
@@ -57,7 +57,7 @@
         "filterable": true,
         "retrievable": true,
         "stored": true,
-        "sortable": true,
+        "sortable": false,
         "facetable": false,
         "key": false,
         "synonymMaps": []
@@ -84,6 +84,20 @@
         "sortable": false,
         "facetable": false,
         "key": false,
+        "synonymMaps": []
+      },
+      {
+        "name": "ChunkVector",
+        "type": "Collection(Edm.Single)",
+        "searchable": true,
+        "filterable": false,
+        "retrievable": false,
+        "stored": true,
+        "sortable": false,
+        "facetable": false,
+        "key": false,
+        "dimensions": 3072,
+        "vectorSearchProfile": "vector-profile-hnsw",
         "synonymMaps": []
       },
       {

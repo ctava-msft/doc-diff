@@ -14,6 +14,7 @@ using Microsoft.Extensions.Configuration;
 using DotNetEnv;
 using DocumentFormat.OpenXml.Packaging;
 using Azure.Identity;
+using System.Text.Json;
 
 public class Ingest
 {
@@ -51,11 +52,11 @@ public class Ingest
         var extractedTexts = new List<string>();
         var documents = new List<SearchDocument>();
         var docUuid = Guid.NewGuid().ToString();
+        var docName = "C5S1";
 
         // For each doc, save the filename for 'PageTitle'
         foreach (var filePath in Directory.GetFiles(docsDirectory, "*.docx"))
         {
-            var docName = Path.GetFileName(filePath);
             using (WordprocessingDocument wordDoc = WordprocessingDocument.Open(filePath, false))
             {
                 var body = wordDoc.MainDocumentPart.Document.Body;
@@ -64,21 +65,20 @@ public class Ingest
                 foreach (var chunk in ChunkTextByTokens(body.InnerText, 7000))
                 {
                     if (string.IsNullOrWhiteSpace(chunk)) continue;
-                    var embedding = await GenerateEmbedding(chunk);
+                    //var embedding = await GenerateEmbedding(chunk);
 
                     documents.Add(new SearchDocument
                     {
                         { "ChunkId", Guid.NewGuid().ToString() },
                         { "ParentChunkId", docUuid },
-                        { "ChunkSequence", documents.Count.ToString() },
+                        { "ChunkSequence", documents.Count },
                         { "PageTitle", docName },
-                        { "PageTitleVector", "[]" },
                         { "PageVersion", Path.GetFileNameWithoutExtension(filePath) },
                         { "CitationTitle", "N/A" },
                         { "ChunkText", chunk },
-                        { "ChunkVector", embedding ?? new List<float>() }, // Ensure this matches the index schema
+                        //{ "ChunkVector", embedding ?? new List<float>() },
                         { "URL", docName },
-                        { "PublicationDate", DateTimeOffset.UtcNow.ToString("o") }, // Ensure DateTime is serialized correctly
+                        { "PublicationDate", DateTimeOffset.UtcNow },
                         { "ManualType", "docx" },
                         { "MetaData", "N/A" },
                         { "ContractType", "N/A" }

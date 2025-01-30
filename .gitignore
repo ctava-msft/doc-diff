@@ -3,3 +3,4 @@ obj
 .env
 .azure
 .history/
+.vscode/
